@@ -1,5 +1,4 @@
 #include "mbed.h"
-#include "config.h"
 #include "gps.h"
 
 Serial gps(GPS_TX, GPS_RX);
@@ -33,7 +32,12 @@ void gps_sampling()
     }
 }
 
-int isEmpty()
+void Receiving()
+{
+    enQueue(gps.getc());
+}
+
+static int isEmpty()
 {
     if(front == rear){
         return 1;
@@ -42,7 +46,7 @@ int isEmpty()
     }
 }
 
-int isFull()
+static int isFull()
 {
     if( (front+1)%Q_size == rear ){
         return 1;
@@ -51,7 +55,7 @@ int isFull()
     }
 }
 
-char deQueue()
+static char deQueue()
 {
     if(isEmpty()){
         return 0;
@@ -61,7 +65,7 @@ char deQueue()
     }
 }
 
-int enQueue(char data)
+static int enQueue(char data)
 {
     if(isFull()){
         return 0;
@@ -72,19 +76,14 @@ int enQueue(char data)
     }
 }
 
-void Receiving()
-{
-    enQueue(gps.getc());
-}
-
-int Checker(char input)
+static int Checker(char input)
 {
     static int header = 0;
     static int HeaderCHK = 0;
     
     DATA[header++] = input;
     
-    switch(HeaderCHK){
+    switch(HeaderCHK){ //문자열 시작이 '$GPGGA'인지 확인
     case 0:
         if(input=='$'){
             HeaderCHK++;
@@ -143,14 +142,14 @@ int Checker(char input)
     return 0;
 }
 
-int Decoder()
+static int Decoder()
 {
     int num = sscanf(DATA, "$GPGGA,%f,%f,%c,%f,%c,%d,%d,%f,%f,%c,%f,M,,*", &Gps.time, &Gps.lat, &Gps.ns, &Gps.lon, &Gps.ew, &Gps.lock, &Gps.sats, &Gps.hdop, &Gps.alt, &Gps.unit, &Gps.geoid);
-    if(num){
+    if(num){ // 읽은 변수가 1개 이상일때 참(시간만 읽은 경우 num == 1)
         Gps.flag = 1; // 새로 업데이트 됨을 알림
         
         if(!Gps.lock) {
-            //Gps.time = 0.0;
+            Gps.time += 90000.00f;
             Gps.lon = 0.0;
             Gps.lat = 0.0;
             Gps.sats = 0;
@@ -167,10 +166,9 @@ int Decoder()
             //GPGGA,092010.000,5210.9546,N,00008.8913,E,1,07,1.3,9.7,M,47.0,M,,0000*5D
 
             //format utc time to seoul time,add 9 time zone
-            //Gps.time = Gps.time + 90000.00f;
+            Gps.time = Gps.time + 90000.00f;
                 
             return 1;
         }
     }
 }
-

@@ -1,4 +1,5 @@
 #pragma once
+#include "config.h"
 
 //mpu9250 register
 #define MPU9250_ADDRESS (0x68<<1) //0b11010000
@@ -24,8 +25,42 @@ extern I2C i2c;
 extern Serial pc;
 
 void MPU9250_RESET(void);
-void MPU9250_INIT(void);
-void MPU9250_GET_GYRO(int16_t * destination);
-void MPU9250_GET_ACCEL(int16_t * destination);
-void gyro_bias();
-void get_MPU(float * gyro_f, float * accel_f);
+void MPU9250_INIT(void); //mpu 각종 설정 수행
+void MPU9250_GET_GYRO(int16_t * destination); //자이로 값 읽기
+void MPU9250_GET_ACCEL(int16_t * destination); //가속도 값 읽기
+void find_gyro_bias(); // 자이로  bias 잡기 초반 100개 평균을 낸다.
+void get_MPU_f(float * gyro_f, float * accel_f); //자이로 가속도 값을 스케일 변환한다. bias잡은 것도 적용한다.
+void get_MPU_d(int16_t * gyro, int16_t * accel); //자이로 가속도 값을 읽은 정수형 그대로 저장한다. bias잡은 것도 적용한다.
+
+
+// 자이로계 측정범위
+// FS_SEL : Full-Scale Range, (Sensitivity Scale Factor)
+// 0 : +/-250 degree/s, (131.0 LSB/(degree/s))
+// 1 : +/-500 degree/s, (65.5 LSB/(degree/s))
+// 2 : +/-1000 degree/s, (32.8 LSB/(degree/s))
+// 3 : +/-2000 degree/s, (16.4 LSB/(degree/s))
+#if FS_SEL == 0
+#define GYRO_SCALE_FACTOR 131.0
+#elif FS_SEL == 1
+#define GYRO_SCALE_FACTOR 65.5
+#elif FS_SEL == 2
+#define GYRO_SCALE_FACTOR 32.8
+#elif FS_SEL == 3
+#define GYRO_SCALE_FACTOR 16.4
+#endif
+
+// 가속도계 측정범위
+// AFS_SEL : Full-Scale Range, (Sensitivity Scale Factor)
+// 0 : +/-2 g, (16384.0 LSB/g)
+// 1 : +/-4 g, (8192.0 LSB/g)
+// 2 : +/-8 g, (4096.0 LSB/g)
+// 3 : +/-16 g, (2048.0 LSB/g)
+#if AFS_SEL == 0
+#define ACCEL_SCALE_FACTOR 16384.0
+#elif AFS_SEL == 1
+#define ACCEL_SCALE_FACTOR 8192.0
+#elif AFS_SEL == 2
+#define ACCEL_SCALE_FACTOR 4096.0
+#elif AFS_SEL == 3
+#define ACCEL_SCALE_FACTOR 2048.0
+#endif
